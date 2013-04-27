@@ -8,11 +8,14 @@ IMAGE_FOLDER_SIZE = 30
 # Total number of images
 IMAGE_SET_SIZE = Dir.glob("input/**/*.{bmp,jp2}").select { |file| File.file?(file) }.count
 
-(IMAGE_SET_SIZE / IMAGE_FOLDER_SIZE.to_f).ceil.times do |i|
-  already_taken   = []
-  distortion_used = Hash.new { |hash, key| hash[key] = 0 }
+# Globally already taken
+file_used = Hash.new { |hash, key| hash[key] = 0 }
 
-  Dir.glob("input/**/*.{bmp,jp2}").each do |file|
+(IMAGE_SET_SIZE / IMAGE_FOLDER_SIZE.to_f).ceil.times do |i|
+  already_taken_in_folder   = []
+  distortion_used_in_folder = Hash.new { |hash, key| hash[key] = 0 }
+
+  Dir.glob("input/**/*.{bmp,jp2}").shuffle.each do |file|
     # next if item == '.' or item == '..'
 
     # Parts of filename (female_asian_11_Blur_23)
@@ -23,24 +26,31 @@ IMAGE_SET_SIZE = Dir.glob("input/**/*.{bmp,jp2}").select { |file| File.file?(fil
     # 4. Level of distortion
     parts = File.basename(file).split("_")
 
-    # Second part is number of image. Do not put the same image into a single folder
-    next if already_taken.include?(parts[2])
+    # Third first parts are unique for image
+    image_name = parts[0..2].join("")
+
+    # Do not put the same image into a single folder
+    next if already_taken_in_folder.include?(image_name)
+
+    # Do not use each file more than twice
+    next if file_used[File.basename(file)] > 2
 
     # Each type of distortion should be used no more than 5 times
-    next if distortion_used[parts[3]] > 5
+    next if distortion_used_in_folder[parts[3]] > 5
 
     # Skip if folder is filled already
-    next if already_taken.size > IMAGE_FOLDER_SIZE
+    next if already_taken_in_folder.size > IMAGE_FOLDER_SIZE
 
     # Create a folder
     new_path = "output/#{i}"
     FileUtils.mkpath(new_path) unless File.directory?(new_path)
 
     # Move file into a folder
-    FileUtils.move file, new_path
+    FileUtils.copy file, new_path
 
     # Update arrays and hashes
-    already_taken << parts[2]
-    distortion_used[parts[3]] += 1
+    already_taken_in_folder << image_name
+    file_used[File.basename(file)] += 1
+    distortion_used_in_folder[parts[3]] += 1
   end
 end
