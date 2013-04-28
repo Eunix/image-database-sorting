@@ -8,11 +8,17 @@ IMAGE_FOLDER_SIZE = 30
 # Total number of images
 IMAGE_SET_SIZE = Dir.glob("input/**/*.{bmp,jp2}").select { |file| File.file?(file) }.count
 
+# Total number of folder
+FOLDERS_NUMBER = 100
+
+# Empty Folder
+FileUtils.rm_rf('output')
+
 # Globally already taken
 file_used = Hash.new { |hash, key| hash[key] = 0 }
 
-(IMAGE_SET_SIZE / IMAGE_FOLDER_SIZE.to_f).ceil.times do |i|
-  already_taken_in_folder   = []
+FOLDERS_NUMBER.times do |i|
+  already_taken_in_folder     = []
   distortion_used_in_folder = Hash.new { |hash, key| hash[key] = 0 }
 
   Dir.glob("input/**/*.{bmp,jp2}").shuffle.each do |file|
@@ -32,11 +38,11 @@ file_used = Hash.new { |hash, key| hash[key] = 0 }
     # Do not put the same image into a single folder
     next if already_taken_in_folder.include?(image_name)
 
-    # Do not use each file more than twice
-    next if file_used[File.basename(file)] > 2
+    # Do not use each file several times
+    next if file_used[File.basename(file)] >= 4
 
-    # Each type of distortion should be used no more than 5 times
-    next if distortion_used_in_folder[parts[3]] > 5
+    # Each type of distortion should be used no more than five times (five levels)
+    next if distortion_used_in_folder[parts[3]] >= 5
 
     # Skip if folder is filled already
     next if already_taken_in_folder.size > IMAGE_FOLDER_SIZE
