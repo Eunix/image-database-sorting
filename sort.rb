@@ -12,7 +12,7 @@ IMAGE_SET_SIZE = Dir.glob("input/**/*.{bmp,jp2}").select { |file| File.file?(fil
 FOLDERS_NUMBER = 100
 
 # Empty Folder
-FileUtils.rm_rf('output')
+# FileUtils.rm_rf('output')
 
 # Globally already taken
 file_used = Hash.new { |hash, key| hash[key] = 0 }
@@ -32,31 +32,33 @@ FOLDERS_NUMBER.times do |i|
     # 4. Level of distortion
     parts = File.basename(file).split("_")
 
-    # Third first parts are unique for image
-    image_name = parts[0..2].join("")
-
-    # Do not put the same image into a single folder
-    next if already_taken_in_folder.include?(image_name)
-
-    # Do not use each file several times
-    next if file_used[File.basename(file)] >= 4
-
-    # Each type of distortion should be used no more than five times (five levels)
-    next if distortion_used_in_folder[parts[3]] >= 5
-
-    # Skip if folder is filled already
-    next if already_taken_in_folder.size > IMAGE_FOLDER_SIZE
-
     # Create a folder
     new_path = "output/#{i}"
     FileUtils.mkpath(new_path) unless File.directory?(new_path)
 
-    # Move file into a folder
-    FileUtils.copy file, new_path
+    # Third first parts are unique for image
+    image_name = parts[0..2].join("")
+
+    # Do not put the same image into a single folder
+    next if Dir.glob("#{new_path}/*.{bmp,jp2}").any?{|d| File.basename(d).split("_")[0..2] == parts[0..2] }
+
+    # Do not use each file several times
+    next if Dir.glob("output/**/*.{bmp,jp2}").select{|d| File.basename(d) == File.basename(file)}.count >= 4
+
+    # Each type of distortion should be used no more than five times (five levels)
+    next if Dir.glob("#{new_path}/*.{bmp,jp2}").select{|d| File.basename(d).split("_")[3] == parts[3]}.size >= 5
+
+    # Skip if folder is filled already
+    next if Dir.glob("#{new_path}/*.{bmp,jp2}").size >= IMAGE_FOLDER_SIZE
 
     # Update arrays and hashes
     already_taken_in_folder << image_name
     file_used[File.basename(file)] += 1
     distortion_used_in_folder[parts[3]] += 1
+
+    # Move file into a folder
+    FileUtils.copy file, new_path
   end
+
+  puts Dir.glob("output/#{i}/*.{bmp,jp2}").count
 end
